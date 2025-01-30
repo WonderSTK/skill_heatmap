@@ -7,12 +7,15 @@ function SkillHeatmap({ selectedUsers }) {
     if (selectedUsers.length > 0) {
       const allSkills = new Set()
       selectedUsers.forEach((user) => {
-        // Handle the array structure of skillset
+        // Correctly traverse the nested structure to get all skills
         const skillset = user.data?.data?.skillset || []
-        skillset.forEach((skill) => {
-          if (skill.name) {
-            allSkills.add(skill.name)
-          }
+        skillset.forEach((category) => {
+          const skills = category.skills || []
+          skills.forEach((skill) => {
+            if (skill.name) {
+              allSkills.add(skill.name)
+            }
+          })
         })
       })
       setUniqueSkills(Array.from(allSkills))
@@ -20,10 +23,7 @@ function SkillHeatmap({ selectedUsers }) {
   }, [selectedUsers])
 
   const getScoreColor = (score) => {
-    // Convert score to number to ensure proper comparison
-    const numScore = Number(score)
-
-    switch (numScore) {
+    switch (Number(score)) {
       case 0:
         return "bg-white"
       case 1:
@@ -41,9 +41,16 @@ function SkillHeatmap({ selectedUsers }) {
 
   const getSkillScore = (user, skillName) => {
     const skillset = user.data?.data?.skillset || []
-    const skill = skillset.find((s) => s.name === skillName)
-    // Convert to number and handle undefined/null cases
-    return skill ? Number(skill.consensus_score) : -1
+    // Search through all categories and their skills
+    for (const category of skillset) {
+      const skills = category.skills || []
+      for (const skill of skills) {
+        if (skill.name === skillName && skill.pos?.[0]?.consensus_score !== undefined) {
+          return skill.pos[0].consensus_score
+        }
+      }
+    }
+    return -1
   }
 
   if (selectedUsers.length === 0) {
@@ -55,10 +62,10 @@ function SkillHeatmap({ selectedUsers }) {
       <table className="min-w-full border-collapse">
         <thead>
           <tr>
-            <th className="w-48 p-2 text-left text-sm font-medium text-gray-600"></th>
+            <th className="w-48 p-2 text-left text-sm font-medium text-gray-600">Skill / User</th>
             {selectedUsers.map((user) => (
               <th key={user.id} className="p-2 text-center text-sm font-medium text-gray-600">
-                {user.name}
+                {user.name || "Unknown"}
               </th>
             ))}
           </tr>
@@ -69,10 +76,11 @@ function SkillHeatmap({ selectedUsers }) {
               <td className="p-2 text-sm text-gray-600">{skill}</td>
               {selectedUsers.map((user) => {
                 const score = getSkillScore(user, skill)
+                const colorClass = getScoreColor(score)
                 return (
                   <td key={`${user.id}-${skill}`} className="p-2">
                     <div
-                      className={`w-8 h-8 mx-auto ${getScoreColor(score)} border border-gray-200 flex items-center justify-center ${score === 4 ? "text-white" : "text-black"}`}
+                      className={`w-8 h-8 mx-auto ${colorClass} border border-gray-200 flex items-center justify-center ${score === 4 ? "text-white" : "text-black"}`}
                       title={`Score: ${score}`}
                     >
                       {score >= 0 ? score : "-"}
