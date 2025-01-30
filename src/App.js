@@ -24,7 +24,7 @@ function App() {
             const detailResponse = await axios.get(`https://forinterview.onrender.com/people/${user.id}`)
             return {
               ...user,
-              data: detailResponse.data.data, // Note: we're accessing data.data here
+              data: detailResponse.data.data,
             }
           } catch (error) {
             console.error(`Error fetching details for user ${user.id}:`, error)
@@ -36,7 +36,6 @@ function App() {
         }),
       )
       setUsers(usersWithData)
-      console.log("Final combined data:", usersWithData)
     } catch (error) {
       console.error("Error fetching users:", error)
       setError("An error occurred while fetching user data. Please try again.")
@@ -49,6 +48,10 @@ function App() {
     if (!selectedUsers.find((u) => u.id === user.id)) {
       setSelectedUsers((prev) => [...prev, user])
     }
+  }
+
+  const handleRemoveUser = (userId) => {
+    setSelectedUsers((prev) => prev.filter((user) => user.id !== userId))
   }
 
   return (
@@ -66,8 +69,14 @@ function App() {
         <div className="flex gap-6">
           <div className="w-72 flex-shrink-0">
             <div className="bg-gray-50 rounded-lg p-4">
-              <h2 className="font-medium mb-4">Most recommended</h2>
-              <UserList users={users} onAddUser={handleAddUser} loading={loading} error={error} />
+              <UserList
+                users={users}
+                selectedUsers={selectedUsers}
+                onAddUser={handleAddUser}
+                onRemoveUser={handleRemoveUser}
+                loading={loading}
+                error={error}
+              />
             </div>
           </div>
           <div className="flex-grow">
